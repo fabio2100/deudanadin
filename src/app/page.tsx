@@ -318,131 +318,133 @@ export default function Home() {
           )}
         </header>
 
-        <div className={styles.table}>
-          <div className={styles.headerRow}>
-            <span>Mes</span>
-            <span>Deuda</span>
-            <span>Pagado</span>
-            <span>Debe</span>
-            <span>Detalle</span>
-          </div>
+        <div className={styles.tableScroll}>
+          <div className={styles.table}>
+            <div className={styles.headerRow}>
+              <span>Mes</span>
+              <span>Deuda</span>
+              <span>Pagado</span>
+              <span>Debe</span>
+              <span>Detalle</span>
+            </div>
 
-          {monthlySummary.map((item) => (
-            <div key={item.key}>
-              <div className={styles.row}>
-                <span data-label="Mes">{item.label}</span>
-                <span data-label="Deuda" className={styles.deuda}>
-                  {formatCurrency(item.deuda)}
-                </span>
-                <span data-label="Pagado" className={styles.pagado}>
-                  {formatCurrency(item.pagado)}
-                </span>
-                <span
-                  data-label="Debe"
-                  className={item.debe > 0 ? styles.debeError : styles.debeSuccess}
-                >
-                  {formatCurrency(item.debe)}
-                </span>
-                <button
-                  type="button"
-                  className={styles.iconButton}
-                  aria-label={`Ver detalle de ${item.label}`}
-                  onClick={() =>
-                    setExpandedMonth((current) => (current === item.key ? null : item.key))
-                  }
-                >
-                  ℹ️
-                </button>
-              </div>
+            {monthlySummary.map((item) => (
+              <div key={item.key}>
+                <div className={styles.row}>
+                  <span data-label="Mes">{item.label}</span>
+                  <span data-label="Deuda" className={styles.deuda}>
+                    {formatCurrency(item.deuda)}
+                  </span>
+                  <span data-label="Pagado" className={styles.pagado}>
+                    {formatCurrency(item.pagado)}
+                  </span>
+                  <span
+                    data-label="Debe"
+                    className={item.debe > 0 ? styles.debeError : styles.debeSuccess}
+                  >
+                    {formatCurrency(item.debe)}
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.iconButton}
+                    aria-label={`Ver detalle de ${item.label}`}
+                    onClick={() =>
+                      setExpandedMonth((current) => (current === item.key ? null : item.key))
+                    }
+                  >
+                    ℹ️
+                  </button>
+                </div>
 
-              {expandedMonth === item.key && (
-                <div className={styles.detailPanel}>
-                  <div className={styles.detailGrid}>
-                    <div className={styles.detailTableWrap}>
-                      <h3>Deudas</h3>
-                      <table className={styles.detailTable}>
-                        <thead>
-                          <tr>
-                            <th>Fecha</th>
-                            <th>Descripción</th>
-                            <th>Monto</th>
-                            <th>Cuota</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {item.deudaRecords.length > 0 ? (
-                            item.deudaRecords.map((deuda) => (
-                              <tr key={deuda._id ?? `${deuda.descripcion}-${deuda.fechaHora}`}>
-                                <td>{formatDate(deuda.fechaHora)}</td>
-                                <td>{deuda.descripcion}</td>
-                                <td>{formatCurrency(getDebtAmountInPesos(deuda))}</td>
-                                <td>
-                                  {deuda.cuotaNro != null && deuda.cuotas != null
-                                    ? `${deuda.cuotaNro}/${deuda.cuotas}`
-                                    : "-"}
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
+                {expandedMonth === item.key && (
+                  <div className={styles.detailPanel}>
+                    <div className={styles.detailGrid}>
+                      <div className={styles.detailTableWrap}>
+                        <h3>Deudas</h3>
+                        <table className={styles.detailTable}>
+                          <thead>
                             <tr>
-                              <td colSpan={4}>Sin deudas para este mes</td>
+                              <th>Fecha</th>
+                              <th>Descripción</th>
+                              <th>Monto</th>
+                              <th>Cuota</th>
                             </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className={styles.detailTableWrap}>
-                      <h3>Pagos</h3>
-                      <table className={styles.detailTable}>
-                        <thead>
-                          <tr>
-                            <th>Fecha</th>
-                            <th>Descripción</th>
-                            <th>Monto</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {item.pagoRecords.length > 0 ? (
-                            item.pagoRecords.map((pago) => (
-                              <tr key={pago._id ?? `${pago.fechaHora}-${pago.monto}`}>
-                                <td>{formatDate(pago.fechaHora)}</td>
-                                <td>{pago.descripcion ?? "-"}</td>
-                                <td>{formatCurrency(Number(pago.monto ?? 0))}</td>
+                          </thead>
+                          <tbody>
+                            {item.deudaRecords.length > 0 ? (
+                              item.deudaRecords.map((deuda) => (
+                                <tr key={deuda._id ?? `${deuda.descripcion}-${deuda.fechaHora}`}>
+                                  <td>{formatDate(deuda.fechaHora)}</td>
+                                  <td>{deuda.descripcion}</td>
+                                  <td>{formatCurrency(getDebtAmountInPesos(deuda))}</td>
+                                  <td>
+                                    {deuda.cuotaNro != null && deuda.cuotas != null
+                                      ? `${deuda.cuotaNro}/${deuda.cuotas}`
+                                      : "-"}
+                                  </td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={4}>Sin deudas para este mes</td>
                               </tr>
-                            ))
-                          ) : (
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className={styles.detailTableWrap}>
+                        <h3>Pagos</h3>
+                        <table className={styles.detailTable}>
+                          <thead>
                             <tr>
-                              <td colSpan={3}>Sin pagos para este mes</td>
+                              <th>Fecha</th>
+                              <th>Descripción</th>
+                              <th>Monto</th>
                             </tr>
-                          )}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {item.pagoRecords.length > 0 ? (
+                              item.pagoRecords.map((pago) => (
+                                <tr key={pago._id ?? `${pago.fechaHora}-${pago.monto}`}>
+                                  <td>{formatDate(pago.fechaHora)}</td>
+                                  <td>{pago.descripcion ?? "-"}</td>
+                                  <td>{formatCurrency(Number(pago.monto ?? 0))}</td>
+                                </tr>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan={3}>Sin pagos para este mes</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            ))}
 
-          <div className={styles.totalRow}>
-            <span>Total</span>
-            <span className={styles.deuda}>
-              {formatCurrency(monthlySummary.reduce((sum, item) => sum + item.deuda, 0))}
-            </span>
-            <span className={styles.pagado}>
-              {formatCurrency(monthlySummary.reduce((sum, item) => sum + item.pagado, 0))}
-            </span>
-            <span
-              className={
-                monthlySummary.reduce((sum, item) => sum + item.debe, 0) > 0
-                  ? styles.debeError
-                  : styles.debeSuccess
-              }
-            >
-              {formatCurrency(monthlySummary.reduce((sum, item) => sum + item.debe, 0))}
-            </span>
-            <span />
+            <div className={styles.totalRow}>
+              <span>Total</span>
+              <span className={styles.deuda}>
+                {formatCurrency(monthlySummary.reduce((sum, item) => sum + item.deuda, 0))}
+              </span>
+              <span className={styles.pagado}>
+                {formatCurrency(monthlySummary.reduce((sum, item) => sum + item.pagado, 0))}
+              </span>
+              <span
+                className={
+                  monthlySummary.reduce((sum, item) => sum + item.debe, 0) > 0
+                    ? styles.debeError
+                    : styles.debeSuccess
+                }
+              >
+                {formatCurrency(monthlySummary.reduce((sum, item) => sum + item.debe, 0))}
+              </span>
+              <span />
+            </div>
           </div>
         </div>
 
