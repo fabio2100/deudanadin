@@ -38,6 +38,19 @@ function formatCurrency(value: number) {
   return `$${value.toLocaleString("es-AR")}`;
 }
 
+function formatCurrencyInput(value: string) {
+  return value.replace(/[^\d.]/g, "");
+}
+
+function parseCurrencyInput(value: string) {
+  if (value.trim() === "") {
+    return 0;
+  }
+
+  const numeric = Number(value.replace(/,/g, ""));
+  return Number.isFinite(numeric) ? numeric : 0;
+}
+
 function formatDate(dateValue: string | Date) {
   const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
   return Number.isNaN(date.getTime())
@@ -52,12 +65,20 @@ export default function Home() {
   const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
+  const [isDebtFormOpen, setIsDebtFormOpen] = useState(false);
   const [paymentForm, setPaymentForm] = useState({
     fecha: new Date().toISOString().slice(0, 10),
     monto: "",
     descripcion: "",
   });
+  const [debtForm, setDebtForm] = useState({
+    fecha: new Date().toISOString().slice(0, 10),
+    esDolar: false,
+    monto: "",
+    descripcion: "",
+  });
   const [paymentError, setPaymentError] = useState("");
+  const [debtError, setDebtError] = useState("");
 
   const getDebtAmountInPesos = (deuda: DeudaRecord) => {
     const baseAmount = Number(deuda.monto ?? 0);
@@ -100,7 +121,7 @@ export default function Home() {
     event.preventDefault();
     setPaymentError("");
 
-    const monto = Number(paymentForm.monto);
+    const monto = parseCurrencyInput(paymentForm.monto);
     const descripcion = paymentForm.descripcion.trim();
 
     if (!paymentForm.fecha || !Number.isFinite(monto) || monto <= 0) {
@@ -137,6 +158,52 @@ export default function Home() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "No se pudo guardar el pago";
       setPaymentError(message);
+    }
+  };
+
+  const handleCreateDeuda = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setDebtError("");
+
+    const monto = parseCurrencyInput(debtForm.monto);
+    const descripcion = debtForm.descripcion.trim();
+
+    if (!debtForm.fecha || !Number.isFinite(monto) || monto <= 0 || !descripcion) {
+      setDebtError("Completá la fecha, el monto y la descripción.");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/deudas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fechaHora: new Date(`${debtForm.fecha}T11:00:00`),
+          monto: debtForm.esDolar ? String(monto) : monto.toFixed(2),
+          descripcion,
+          esDolar: debtForm.esDolar,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.message || "No se pudo guardar la deuda");
+      }
+
+      setDebtForm({
+        fecha: new Date().toISOString().slice(0, 10),
+        esDolar: false,
+        monto: "",
+        descripcion: "",
+      });
+      setIsDebtFormOpen(false);
+      await loadData();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo guardar la deuda";
+      setDebtError(message);
     }
   };
 
@@ -222,14 +289,132 @@ export default function Home() {
               <h1>Resumen mensual</h1>
             </div>
 
-            <button
-              type="button"
-              className={styles.primaryButton}
-              onClick={() => setIsPaymentFormOpen((current) => !current)}
-            >
-              Agregar pago
-            </button>
+            <div className={styles.headerActions}>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={() => {
+                  setIsPaymentFormOpen(false);
+                  setPaymentError("");
+                  setIsDebtFormOpen((current) => !current);
+                }}
+              >
+                Agregar deuda
+              </button>
+
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={() => {
+                  setIsDebtFormOpen(false);
+                  setDebtError("");
+                  setIsPaymentFormOpen((current) => !current);
+                }}
+              >
+                Agregar pago
+              </button>
+            </div>
           </div>
+
+          {isDebtFormOpen && (
+            <div
+              className={styles.modalOverlay}
+              onClick={() => {
+                setIsDebtFormOpen(false);
+                setDebtError("");
+              }}
+            >
+              <div className={styles.modalCard} onClick={(event) => event.stopPropagation()}>
+                <div className={styles.modalHeader}>
+                  <h2>Agregar deuda</h2>
+                  <button
+                    type="button"
+                    className={styles.closeButton}
+                    aria-label="Cerrar formulario"
+                    onClick={() => {
+                      setIsDebtFormOpen(false);
+                      setDebtError("");
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <form className={styles.paymentForm} onSubmit={handleCreateDeuda}>
+                  <div className={styles.paymentFields}>
+                    <label className={styles.paymentField}>
+                      <span>Fecha</span>
+                      <input
+                        type="date"
+                        value={debtForm.fecha}
+                        onChange={(event) =>
+                          setDebtForm((current) => ({ ...current, fecha: event.target.value }))
+                        }
+                      />
+                    </label>
+
+                    <label className={styles.checkboxField}>
+                      <span>Es Dólar</span>
+                      <input
+                        type="checkbox"
+                        checked={debtForm.esDolar}
+                        onChange={(event) =>
+                          setDebtForm((current) => ({ ...current, esDolar: event.target.checked }))
+                        }
+                      />
+                    </label>
+
+                    <label className={styles.paymentField}>
+                      <span>Monto</span>
+                      <div className={styles.currencyInputWrapper}>
+                        <span className={styles.currencyPrefix}>$</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={formatCurrencyInput(debtForm.monto)}
+                          onChange={(event) =>
+                            setDebtForm((current) => ({ ...current, monto: event.target.value }))
+                          }
+                          placeholder="0"
+                          className={styles.currencyInput}
+                        />
+                      </div>
+                    </label>
+
+                    <label className={styles.paymentField}>
+                      <span>Descripción</span>
+                      <input
+                        type="text"
+                        value={debtForm.descripcion}
+                        onChange={(event) =>
+                          setDebtForm((current) => ({ ...current, descripcion: event.target.value }))
+                        }
+                        placeholder="Ej: Impuesto, tarjeta..."
+                      />
+                    </label>
+                  </div>
+
+                  <div className={styles.paymentActions}>
+                    <button type="submit" className={styles.primaryButton}>
+                      Guardar deuda
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.secondaryButton}
+                      onClick={() => {
+                        setIsDebtFormOpen(false);
+                        setDebtError("");
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+
+                  {debtError && <p className={styles.paymentError}>{debtError}</p>}
+                </form>
+              </div>
+            </div>
+          )}
 
           {isPaymentFormOpen && (
             <div
@@ -270,16 +455,19 @@ export default function Home() {
 
                     <label className={styles.paymentField}>
                       <span>Monto</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={paymentForm.monto}
-                        onChange={(event) =>
-                          setPaymentForm((current) => ({ ...current, monto: event.target.value }))
-                        }
-                        placeholder="0"
-                      />
+                      <div className={styles.currencyInputWrapper}>
+                        <span className={styles.currencyPrefix}>$</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={formatCurrencyInput(paymentForm.monto)}
+                          onChange={(event) =>
+                            setPaymentForm((current) => ({ ...current, monto: event.target.value }))
+                          }
+                          placeholder="0"
+                          className={styles.currencyInput}
+                        />
+                      </div>
                     </label>
 
                     <label className={styles.paymentField}>

@@ -30,6 +30,13 @@
   gap: 16px;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .kicker {
   margin: 0 0 8px;
   font-size: 12px;
@@ -98,12 +105,24 @@
   gap: 16px;
 }
 
-.paymentField {
+.paymentField,
+.checkboxField {
   display: flex;
   flex-direction: column;
   gap: 8px;
   font-weight: 600;
   color: #e2e8f0;
+}
+
+.checkboxField {
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.checkboxField input {
+  width: 18px;
+  height: 18px;
+  accent-color: #f8fafc;
 }
 
 .paymentField input {
@@ -114,6 +133,40 @@
   background: #0f172a;
   color: #f8fafc;
   font-size: 0.95rem;
+}
+
+.currencyInputWrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  overflow: hidden;
+}
+
+.currencyPrefix {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  background: #111827;
+  color: #f8fafc;
+  font-weight: 700;
+  border-right: 1px solid #334155;
+}
+
+.currencyInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: #f8fafc;
+  font-size: 0.95rem;
+}
+
+.currencyInput:focus {
+  outline: none;
 }
 
 .paymentActions {
