@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import styles from "./page.module.css";
+import {
+  formatCurrency,
+  formatCurrencyInput,
+  parseCurrencyInput,
+  formatDate,
+} from "@/lib/format";
 
 type DeudaRecord = {
   _id?: string;
@@ -34,31 +40,34 @@ function getMonthKey(date: Date) {
   return `${date.getFullYear()}-${date.getMonth()}`;
 }
 
-function formatCurrency(value: number) {
-  return `$${value.toLocaleString("es-AR")}`;
-}
-
-function formatCurrencyInput(value: string) {
-  return value.replace(/[^\d.]/g, "");
-}
-
-function parseCurrencyInput(value: string) {
-  if (value.trim() === "") {
-    return 0;
-  }
-
-  const numeric = Number(value.replace(/,/g, ""));
-  return Number.isFinite(numeric) ? numeric : 0;
-}
-
-function formatDate(dateValue: string | Date) {
-  const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
-  return Number.isNaN(date.getTime())
-    ? "-"
-    : date.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
+// util functions moved to src/lib/format.ts for reuse and testing
 
 export default function Home() {
+  function allowNumericInput(event: React.KeyboardEvent<HTMLInputElement>) {
+    const allowed = [
+      "Backspace",
+      "Delete",
+      "ArrowLeft",
+      "ArrowRight",
+      "Tab",
+      "Home",
+      "End",
+    ];
+
+    if (allowed.includes(event.key)) return;
+
+    // Allow digits
+    if (/^[0-9]$/.test(event.key)) return;
+
+    // Allow comma and dot for decimals
+    if (event.key === "," || event.key === ".") return;
+
+    // Allow copy/paste shortcuts
+    if ((event.ctrlKey || event.metaKey) && (event.key === "v" || event.key === "c" || event.key === "x")) return;
+
+    event.preventDefault();
+  }
+
   const [deudas, setDeudas] = useState<DeudaRecord[]>([]);
   const [pagos, setPagos] = useState<PagoRecord[]>([]);
   const [dolarVenta, setDolarVenta] = useState<number>(1);
@@ -374,10 +383,13 @@ export default function Home() {
                         <span className={styles.currencyPrefix}>$</span>
                         <input
                           type="text"
-                          inputMode="decimal"
-                          value={formatCurrencyInput(debtForm.monto)}
+                          value={debtForm.monto}
+                          onKeyDown={allowNumericInput}
                           onChange={(event) =>
-                            setDebtForm((current) => ({ ...current, monto: event.target.value }))
+                            setDebtForm((current) => ({
+                              ...current,
+                              monto: formatCurrencyInput(event.target.value),
+                            }))
                           }
                           placeholder="0"
                           className={styles.currencyInput}
@@ -463,10 +475,13 @@ export default function Home() {
                         <span className={styles.currencyPrefix}>$</span>
                         <input
                           type="text"
-                          inputMode="decimal"
-                          value={formatCurrencyInput(paymentForm.monto)}
+                          value={paymentForm.monto}
+                          onKeyDown={allowNumericInput}
                           onChange={(event) =>
-                            setPaymentForm((current) => ({ ...current, monto: event.target.value }))
+                            setPaymentForm((current) => ({
+                              ...current,
+                              monto: formatCurrencyInput(event.target.value),
+                            }))
                           }
                           placeholder="0"
                           className={styles.currencyInput}
