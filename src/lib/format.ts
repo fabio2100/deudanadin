@@ -7,35 +7,33 @@ export function formatCurrencyInput(value: string) {
   const raw = String(value ?? "").trim();
   if (raw === "") return "";
 
-  // Keep only digits and separators
-  const cleaned = raw.replace(/[^\d.,]/g, "");
+  const cleaned = raw.replace(/[^\d,.-]/g, "");
+  if (!cleaned) return "";
 
-  // Determine which separator is decimal by checking last occurrence
   const lastDot = cleaned.lastIndexOf(".");
   const lastComma = cleaned.lastIndexOf(",");
-  let decimalSep = "";
-  if (lastComma > lastDot) decimalSep = ",";
-  else if (lastDot > lastComma) decimalSep = ".";
+  const decimalSeparator = lastComma > lastDot ? "," : ".";
 
   let integerPart = cleaned;
   let decimalPart = "";
-  if (decimalSep) {
-    const parts = cleaned.split(decimalSep);
-    decimalPart = parts.pop() ?? "";
-    integerPart = parts.join("");
+
+  if (lastDot !== -1 || lastComma !== -1) {
+    const separatorIndex = Math.max(lastDot, lastComma);
+    if (separatorIndex >= 0) {
+      const parts = cleaned.split(decimalSeparator);
+      decimalPart = parts.pop() ?? "";
+      integerPart = parts.join("");
+    }
   }
 
   integerPart = integerPart.replace(/\D/g, "");
-  const intNumber = integerPart ? Number(integerPart) : 0;
-  const formattedInteger = intNumber.toLocaleString("es-AR");
+  const formattedInteger = integerPart.replace(/^0+(?=\d)/, "") || "0";
 
   if (decimalPart) {
-    // keep up to 2 decimal digits
     decimalPart = decimalPart.replace(/\D/g, "").slice(0, 2);
     return `${formattedInteger},${decimalPart}`;
   }
 
-  // If user typed a trailing separator, preserve it as comma for locale
   const lastChar = raw[raw.length - 1];
   if (lastChar === "." || lastChar === ",") {
     return `${formattedInteger},`;
