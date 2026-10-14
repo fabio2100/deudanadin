@@ -6,6 +6,48 @@ export function formatCurrency(value: number) {
 export function formatCurrencyInput(value: string) {
   const raw = String(value ?? "").trim();
   if (raw === "") return "";
+
+  // Keep only digits and separators
+  const cleaned = raw.replace(/[^\d.,]/g, "");
+
+  // Determine which separator is decimal by checking last occurrence
+  const lastDot = cleaned.lastIndexOf(".");
+  const lastComma = cleaned.lastIndexOf(",");
+  let decimalSep = "";
+  if (lastComma > lastDot) decimalSep = ",";
+  else if (lastDot > lastComma) decimalSep = ".";
+
+  let integerPart = cleaned;
+  let decimalPart = "";
+  if (decimalSep) {
+    const parts = cleaned.split(decimalSep);
+    decimalPart = parts.pop() ?? "";
+    integerPart = parts.join("");
+  }
+
+  integerPart = integerPart.replace(/\D/g, "");
+  const intNumber = integerPart ? Number(integerPart) : 0;
+  const formattedInteger = intNumber.toLocaleString("es-AR");
+
+  if (decimalPart) {
+    // keep up to 2 decimal digits
+    decimalPart = decimalPart.replace(/\D/g, "").slice(0, 2);
+    return `${formattedInteger},${decimalPart}`;
+  }
+
+  // If user typed a trailing separator, preserve it as comma for locale
+  const lastChar = raw[raw.length - 1];
+  if (lastChar === "." || lastChar === ",") {
+    return `${formattedInteger},`;
+  }
+
+  return formattedInteger;
+}
+
+export function parseCurrencyInput(value: string) {
+  const raw = String(value ?? "").trim();
+  if (raw === "") return 0;
+
   // Heuristic: if contains comma, treat comma as decimal separator and remove dots.
   // If only dots are present, decide if dot is decimal (one dot near the end) or thousand separator.
   if (raw.includes(",")) {
@@ -29,43 +71,6 @@ export function formatCurrencyInput(value: string) {
 
   // Otherwise treat dots as thousand separators and remove them
   const numeric = Number(raw.replace(/\./g, ""));
-  return Number.isFinite(numeric) ? numeric : 0;
-  const lastComma = cleaned.lastIndexOf(",");
-  let decimalSep = "";
-  if (lastComma > lastDot) decimalSep = ",";
-  else if (lastDot > lastComma) decimalSep = ".";
-
-  let integerPart = cleaned;
-  let decimalPart = "";
-  if (decimalSep) {
-    const parts = cleaned.split(decimalSep);
-    decimalPart = parts.pop() ?? "";
-    integerPart = parts.join("");
-  }
-
-  integerPart = integerPart.replace(/\D/g, "");
-  const intNumber = integerPart ? Number(integerPart) : 0;
-  const formattedInteger = intNumber.toLocaleString("es-AR");
-
-  if (decimalPart) {
-    decimalPart = decimalPart.replace(/\D/g, "").slice(0, 2);
-    return `${formattedInteger},${decimalPart}`;
-  }
-
-  const lastChar = raw[raw.length - 1];
-  if (lastChar === "." || lastChar === ",") {
-    return `${formattedInteger},`;
-  }
-
-  return formattedInteger;
-}
-
-export function parseCurrencyInput(value: string) {
-  const raw = String(value ?? "").trim();
-  if (raw === "") return 0;
-
-  const normalized = raw.replace(/\./g, "").replace(/,/g, ".");
-  const numeric = Number(normalized);
   return Number.isFinite(numeric) ? numeric : 0;
 }
 
