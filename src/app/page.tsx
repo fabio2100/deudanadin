@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import styles from "./page.module.css";
 
 type DeudaRecord = {
@@ -80,16 +80,16 @@ export default function Home() {
   const [paymentError, setPaymentError] = useState("");
   const [debtError, setDebtError] = useState("");
 
-  const getDebtAmountInPesos = (deuda: DeudaRecord) => {
+  const getDebtAmountInPesos = useCallback((deuda: DeudaRecord) => {
     const baseAmount = Number(deuda.monto ?? 0);
     if (!deuda.esDolar) {
       return baseAmount;
     }
 
     return baseAmount * dolarVenta * 1.21;
-  };
+  }, [dolarVenta]);
 
-  const loadData = async () => {
+  const refreshData = useCallback(async () => {
     try {
       const [deudasRes, pagosRes, dolarRes] = await Promise.all([
         fetch("/api/deudas"),
@@ -111,11 +111,15 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    void loadData();
-  }, []);
+    const timeoutId = window.setTimeout(() => {
+      void refreshData();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [refreshData]);
 
   const handleCreatePago = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -154,7 +158,7 @@ export default function Home() {
         descripcion: "",
       });
       setIsPaymentFormOpen(false);
-      await loadData();
+      await refreshData();
     } catch (error) {
       const message = error instanceof Error ? error.message : "No se pudo guardar el pago";
       setPaymentError(message);
@@ -200,7 +204,7 @@ export default function Home() {
         descripcion: "",
       });
       setIsDebtFormOpen(false);
-      await loadData();
+      await refreshData();
     } catch (error) {
       const message = error instanceof Error ? error.message : "No se pudo guardar la deuda";
       setDebtError(message);

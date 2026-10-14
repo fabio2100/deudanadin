@@ -61,13 +61,13 @@ async function normalizeDeudaInput(body: unknown): Promise<Deuda> {
   let montoRaw = String(payload.monto ?? "");
 
   if (esDolar) {
-    const venta = await getDolarOficialVenta();
     const montoUsd = Number(montoRaw);
     if (!Number.isFinite(montoUsd)) {
       throw new Error("monto debe ser numérico");
     }
 
-    montoRaw = normalizeMontoString(montoUsd * venta * 1.21);
+    // Guardar el monto tal cual el usuario lo ingresó (sin convertir a pesos)
+    montoRaw = normalizeMontoString(montoUsd);
   } else {
     if (!/^\d+(\.\d{2})?$/.test(montoRaw)) {
       throw new Error("monto debe ser un string con dos decimales");
